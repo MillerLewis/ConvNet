@@ -121,3 +121,9 @@ def convert_and_pickle_multiple_idx(*file_paths):
     #Will assume full file paths
     for file_path in file_paths:
         convert_and_pickle_idx(file_path)
+
+def convert_and_pickle_from_dir(dir_name):
+    files = [os.path.join(dir_name, f) for f in filter(lambda f: re.search(r'\.idx\d-ubyte$', os.path.normpath(f)),
+                   os.listdir(dir_name))]
+    convert_and_pickle_multiple_idx(*files)
+
