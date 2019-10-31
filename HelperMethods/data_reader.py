@@ -6,7 +6,7 @@ import os
 
 from HelperMethods.layer_help import is_close
 
-def convert_bytes_array(byte_order, byte_type, byte_array, num_bytes):
+def _convert_idx_bytes_array(byte_order, byte_type, byte_array, num_bytes):
     #TO DO: Make it so that it can take a byte_array that is possible gargantuan. I.e. it would split it up
     # in reasonable ways and join together or save it in different files or numpy arrays.
     # Maybe a yield would be more reasonable
@@ -31,7 +31,7 @@ def convert_bytes_array(byte_order, byte_type, byte_array, num_bytes):
 
     return struct.unpack_from(byte_order + byte_type * num_to_convert, byte_array)
 
-def magic_number_converter(byte_seq):
+def _magic_number_converter(byte_seq):
     DATA_TYPE_DICT = {"8": "B",  # Unsigned byte
                       "9": "b",  # signed byte
                       "11": "h",  # signed short
@@ -56,7 +56,7 @@ def magic_number_converter(byte_seq):
     # Byte 3 is the dimension of the vector/matrix
     return (DATA_TYPE_DICT.get(byte_seq[2].__str__()), NUM_OF_BYTES_IN_TYPE.get(byte_seq[2].__str__()), byte_seq[3])
 
-def convert_idx_data_numpy(file_path):
+def _convert_idx_data_numpy(file_path):
     returnNpArray = None
 
     try:
@@ -64,7 +64,7 @@ def convert_idx_data_numpy(file_path):
             data = f.read()
             # print(try_to_convert_bytes_array(data, 16, len(data), "f"))
 
-            data_type, num_of_bytes_in_type, dim_of_matrix = magic_number_converter(data[0:4])
+            data_type, num_of_bytes_in_type, dim_of_matrix = _magic_number_converter(data[0:4])
 
             if (re.search("\.idx\d-ubyte$", file_path)):
                 # Images begin with
@@ -81,7 +81,7 @@ def convert_idx_data_numpy(file_path):
                 offset_after_data_setup = byte_offset * (dim_of_matrix + 1)
                 data_to_convert = data[offset_after_data_setup:]
 
-                returnNpArray = np.asarray(convert_bytes_array(">", "B", data_to_convert, len(data_to_convert)))
+                returnNpArray = np.asarray(_convert_idx_bytes_array(">", "B", data_to_convert, len(data_to_convert)))
                 if (len(sizes_of_data) != 1):
                     returnNpArray = returnNpArray.reshape(*sizes_of_data)
 
@@ -93,7 +93,7 @@ def convert_idx_data_numpy(file_path):
     return returnNpArray
 
 
-def pickle_numpy_array(array, file_path):
+def _pickle_numpy_array(array, file_path):
     #Pickles numpy array into file_path
     with open(file_path, 'wb') as f:
         pickle.dump(array, f)
@@ -110,20 +110,20 @@ def unpickle_numpy_array(file_path):
     else:
         raise ValueError("Tried to return a null or invalid numpy array instead of valid numpy array after unpickling.")
 
-def convert_and_pickle_idx(file_path):
+def convert_and_pickle_idx(file_path, overwrite = False):
     #Converts idx file into numpy array and then pickles it
     new_file_path = re.sub(r'\.idx\d-ubyte$', '.pickle', os.path.normpath(file_path))
-    if (not os.path.exists(new_file_path)):
-        array_to_save = convert_idx_data_numpy(file_path)
-        pickle_numpy_array(array_to_save, new_file_path)
+    if (not os.path.exists(new_file_path) or overwrite):
+        array_to_save = _convert_idx_data_numpy(file_path)
+        _pickle_numpy_array(array_to_save, new_file_path)
 
-def convert_and_pickle_multiple_idx(*file_paths):
+def convert_and_pickle_multiple_idx(*file_paths, overwrite=False):
     #Will assume full file paths
     for file_path in file_paths:
-        convert_and_pickle_idx(file_path)
+        convert_and_pickle_idx(file_path, overwrite)
 
-def convert_and_pickle_from_dir(dir_name):
+def convert_and_pickle_from_dir(dir_name, overwrite=False):
     files = [os.path.join(dir_name, f) for f in filter(lambda f: re.search(r'\.idx\d-ubyte$', os.path.normpath(f)),
                    os.listdir(dir_name))]
-    convert_and_pickle_multiple_idx(*files)
+    convert_and_pickle_multiple_idx(*files, overwrite)
 

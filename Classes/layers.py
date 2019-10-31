@@ -1,4 +1,4 @@
-from HelperMethods.layer_help import isclose, convolution, flipMatrix, initializeRandomMatrix
+from HelperMethods.layer_help import is_close, convolution, flipMatrix, initializeRandomMatrix
 import numpy as np
 
 #Define a general class of layers just so other layers are subclasses
@@ -46,7 +46,7 @@ class ConvLayer(Layer):
 
     def forwardPass(self, inp):
         outputSize = (inp.shape[0] - self.filterSize - 2 * self.padding) / self.stride + 1
-        if not isclose(outputSize, int(round(outputSize))):
+        if not is_close(outputSize, int(round(outputSize))):
             raise Exception("Output size will not be valid in ConvLayer", str(self))
         outputSize = int(round(outputSize))
 
