@@ -39,10 +39,17 @@ def _magic_number_converter(byte_seq):
                       "13": "f",  # signed float
                       "14": "d"}  # signed double
 
-    NUM_OF_BYTES_IN_TYPE = {"B": 1,
+    NUM_OF_BYTES_IN_TYPE = {"c": 1,
+                            "B": 1,
                             "b": 1,
                             "h": 2,
+                            "H": 2,
                             "i": 4,
+                            "I": 4,
+                            "l": 4,
+                            "L": 4,
+                            "q": 8,
+                            "Q": 8,
                             "f": 4,
                             "d": 8}
 
