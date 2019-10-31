@@ -1,6 +1,9 @@
 from HelperMethods.layer_help import is_close, convolution, flipMatrix, initializeRandomMatrix
 import numpy as np
 
+import HelperMethods.nn_logger as L
+LOGGER = L.get_nn_logger()
+LOGGER.debug("MESSAGE")
 #Define a general class of layers just so other layers are subclasses
 #We'll also define some methods that so we can have a guideline for all other
 #layers

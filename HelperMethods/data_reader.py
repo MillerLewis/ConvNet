@@ -5,6 +5,9 @@ import numpy as np
 import os
 
 from HelperMethods.layer_help import is_close
+import logging
+import HelperMethods.nn_logger as L
+LOGGER = L.get_nn_logger(__name__, logging.DEBUG)
 
 def _convert_idx_bytes_array(byte_order, byte_type, byte_array, num_bytes):
     #TO DO: Make it so that it can take a byte_array that is possible gargantuan. I.e. it would split it up
@@ -110,19 +113,34 @@ def unpickle_numpy_array(file_path):
     # Unpickles numpy_array
     return_array = None
     file_path = os.path.normpath(file_path)
-    with open(file_path, 'rb') as f:
-        return_array = pickle.load(f)
-    if (return_array is not None or isinstance(return_array, np.array)):
-        return return_array
-    else:
-        raise ValueError("Tried to return a null or invalid numpy array instead of valid numpy array after unpickling.")
+
+    try:
+        with open(file_path, 'rb') as f:
+            return_array = pickle.load(f)
+        if (return_array is not None or isinstance(return_array, np.array)):
+            return return_array
+        else:
+            try:
+                raise ValueError
+            except ValueError as e:
+                LOGGER.exception("Tried to return a null or invalid numpy array instead of valid numpy array after unpickling.")
+    except FileNotFoundError as e:
+        LOGGER.exception("File to unpickle not found at file path: {}".format(file_path))
 
 def convert_and_pickle_idx(file_path, overwrite = False):
     #Converts idx file into numpy array and then pickles it
-    new_file_path = re.sub(r'\.idx\d-ubyte$', '.pickle', os.path.normpath(file_path))
+    new_file_path = re.sub(r'idx\d-ubyte$', 'pickle', os.path.normpath(file_path))
     if (not os.path.exists(new_file_path) or overwrite):
+        LOGGER.debug("Starting conversion of {}".format(file_path))
+
         array_to_save = _convert_idx_data_numpy(file_path)
         _pickle_numpy_array(array_to_save, new_file_path)
+
+        LOGGER.debug("Conversion of following finished: {}".format(file_path))
+    elif (os.path.exists(new_file_path) and not overwrite):
+        LOGGER.debug("Attempted to convert following but file already existed and do not want to overwrite: {}".format(file_path))
+    elif (not os.path.exists(new_file_path)):
+        LOGGER.error("Could not find file path when attempting to convert.\nFile path: {}".format(file_path))
 
 def convert_and_pickle_multiple_idx(*file_paths, overwrite=False):
     #Will assume full file paths
@@ -130,7 +148,7 @@ def convert_and_pickle_multiple_idx(*file_paths, overwrite=False):
         convert_and_pickle_idx(file_path, overwrite)
 
 def convert_and_pickle_from_dir(dir_name, overwrite=False):
+    LOGGER.debug("Picking up files from {} and{} overwriting".format(dir_name, " not" if not overwrite else ""))
     files = [os.path.join(dir_name, f) for f in filter(lambda f: re.search(r'\.idx\d-ubyte$', os.path.normpath(f)),
                    os.listdir(dir_name))]
-    convert_and_pickle_multiple_idx(*files, overwrite)
-
+    convert_and_pickle_multiple_idx(*files, overwrite=overwrite)
